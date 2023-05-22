@@ -1,19 +1,34 @@
 Mic[x]|
 Eject[x]|
-x?10|
+$imposter(x != 15)$s
+        x ? x -	2|
+$e
+$crewmate$s  
+        x ? x +	5|
+$e
 Eject[x]|
-y?20|
+
+
+y?10|
 Eject[y]|
-Eject[35]|
-a?1+2|
+$imposter(y == 10)$s
+	y ? y / 2|
+$e
+Eject[y]|
+
+
+z?0|
+Eject[z]|
+$loop(z<20)$s
+	z ? z + 10|
+	Eject[z]|
+$e
+
+
+a?5|
 Eject[a]|
-b?1*2|
-Eject[b]|
-c?20/2|
-Eject[c]|
-d?50-25|
-Eject[d]|
-e?1*2+6/2|
-Eject[e]|
-
-
+$imposter(a<10)$s
+	a ? a * 2|
+	Eject[a]|
+$e
+	

@@ -31,13 +31,24 @@ TOKEN : { <OUTPUT : "Eject"> }
 TOKEN : { <VB : "|"> }
 TOKEN : { <LB : "["> }
 TOKEN : { <RB : "]"> }
-TOKEN : { <LP : "(" > }
-TOKEN : { <RP : ")" > }
-TOKEN : { <ID : (["A"-"Z"]| ["a"-"z"])(["a"-"z"] |["A"-"Z"] |["0"-"9"] | "_") * > }
-TOKEN : { <PLUS : "+" > }
-TOKEN : { <MINUS : "-" > }
-TOKEN : { <MUL : "*" > }
-TOKEN : { <DIV : "/" > }
+TOKEN : { <LP : "("> }
+TOKEN : { <RP : ")"> }
+TOKEN : { <ID : (["A"-"Z"]| ["a"-"z"])(["a"-"z"] |["A"-"Z"] |["0"-"9"] | "_") *> }
+TOKEN : { <PLUS : "+"> }
+TOKEN : { <MINUS : "-"> }
+TOKEN : { <MUL : "*"> }
+TOKEN : { <DIV : "/"> }
+TOKEN : { <LESSTHAN : "<"> }
+TOKEN : { <GREATTHAN : ">"> }
+TOKEN : { <LESSOREQUAL : "<="> }
+TOKEN : { <GREATOREQUAL : ">="> }
+TOKEN : { <EQUALTO : "=="> } 
+TOKEN : { <NOTEQUALTO : "!="> }
+TOKEN : { <START : "$s"> }
+TOKEN : { <END : "$e"> }
+TOKEN : { <WHILE : "$loop"> }
+TOKEN : { <IF : "$imposter"> }
+TOKEN : { <ELSE : "$crewmate"> }
                
 Node Assign():
 {
@@ -47,9 +58,9 @@ Node Assign():
 }
 {
 	{ n = new AssignNode(); }
-	t = <ID>	{ n.addChild(new IDNode(t.image)); }
+	t = <ID> { n.addChild(new IDNode(t.image)); }
 	<ASSIGN>
-	c = Exp()	{ n.addChild(c); }
+	c = Exp() { n.addChild(c); }
 	<VB>
 
 	{ return  n; }
@@ -81,7 +92,7 @@ Node Output():
 	{ n = new OutputNode(); }
 	<OUTPUT>
 	<LB>
-	c = Exp()	{ n.addChild(c); }
+	c = Exp() { n.addChild(c); }
 	<RB>
 	<VB>
 
@@ -96,13 +107,13 @@ Node Exp():
 }
 {	
 	{ n = new ExpNode(); }
-	c = Mexp()	{ n.addChild(c); }
+	c = Mexp() { n.addChild(c); }
 	(
-	t = <PLUS> 
-	c = Mexp()	{ n.addChild(new OpNode(t.image)); n.addChild(c); }
-	|
-	t = <MINUS> 
-	c = Mexp()	{ n.addChild(new OpNode(t.image)); n.addChild(c); }
+		t = <PLUS> 
+		c = Mexp() { n.addChild(new OpNode(t.image)); n.addChild(c); }
+		|
+		t = <MINUS> 
+		c = Mexp() { n.addChild(new OpNode(t.image)); n.addChild(c); }
 	)*
 
 	{ return n; }
@@ -116,13 +127,13 @@ Node Mexp():
 }
 {
 	{ n = new ExpNode(); }
-	c = Factor()	{ n.addChild(c); }        
+	c = Factor() { n.addChild(c); }        
         ( 
-	t = <MUL>
-	c = Factor()	{ n.addChild(new OpNode(t.image)); n.addChild(c); }
-	|
-	t = <DIV>
-	c = Factor()	{ n.addChild(new OpNode(t.image)); n.addChild(c); }
+		t = <MUL>
+		c = Factor() { n.addChild(new OpNode(t.image)); n.addChild(c); }
+		|
+		t = <DIV>
+		c = Factor() { n.addChild(new OpNode(t.image)); n.addChild(c); }
         )*
 
         { return n; }
@@ -135,18 +146,115 @@ Node Factor():
 }
 {
 	(
-	t = <ID>  { return new IDNode(t.image); }
-	|
-	t = <INT> { return new INTNode(t.image); }
-	|
-	(
-	<LP>
-	c = Exp()
-	<RP>
-	)	
+		t = <ID>  { return new IDNode(t.image); }
+		|
+		t = <INT> { return new INTNode(t.image); }
+		|
+		(
+			<LP>
+			c = Exp()
+			<RP>
+		)	
 	)
 
 	{ return c; }
+}
+
+Node Relation():
+{
+	Node n;
+	Node c;
+}
+{
+	{ n = new RelNode(); }
+	(
+		c = Exp() { n.addChild(c); }
+		c = Relop() { n.addChild(c); }
+		c = Exp() { n.addChild(c); }
+	)
+
+	{ return n; }
+}
+
+Node Relop():
+{
+        Token t;
+        Node n;
+}
+{
+        { n = null; }
+        (
+                t = <LESSTHAN> { n = new OpNode(t.image); }
+                |
+                t = <GREATTHAN> { n = new OpNode(t.image); }
+                |
+                t = <LESSOREQUAL> { n = new OpNode(t.image); }
+                |
+                t = <GREATOREQUAL> { n = new OpNode(t.image); }
+                |
+                t = <EQUALTO> { n = new OpNode(t.image); }
+                |
+                t = <NOTEQUALTO> { n = new OpNode(t.image); }
+        )
+
+        { return n; }
+}
+
+Node Loop():
+{
+	Node n;
+	Node c;
+}
+{
+	{ n = new LoopNode(); }
+	<WHILE>
+	<LP>
+	c = Relation() { n.addChild(c); }
+	<RP>
+	c = Block() { n.addChild(c); }
+
+	{ return n; }
+}
+
+Node Block():
+{
+	Node n;
+	Node c;
+}
+{
+	{ n = new BlockNode(); }
+	<START>
+	(
+		c = Input() { n.addChild(c); }
+		|
+		c = Output() { n.addChild(c); }
+		|
+		c = Assign() { n.addChild(c); }
+		|
+		c = Loop() { n.addChild(c); }
+	)+
+	<END>
+
+	{ return n; }
+}
+Node If():
+{
+	Node n;
+	Node c;
+}
+{
+	{ n = new IfElseNode(); }
+	<IF>
+	<LP>
+	c = Relation() { n.addChild(c); }
+	<RP>
+	c = Block() { n.addChild(c); }
+	(
+		<ELSE>
+		c = Block() { n.addChild(c); }
+	)?
+
+	{ return n; }
 }
 
 Node Program():
@@ -162,7 +270,12 @@ Node Program():
 		c = Output() { n.addChild(c); }
 		|
 		c = Assign() { n.addChild(c); }
+		|
+		c = Loop() { n.addChild(c); }
+		|
+		c = If() { n.addChild(c); }
 	)+
 	<EOF>
+
 	{ return n; }
 }
